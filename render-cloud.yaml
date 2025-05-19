@@ -3,7 +3,7 @@ services:
   - type: web
     name: talkToYourDocument-backend
     env: python
-    buildCommand: pip install -r requirements-slim.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: python app_backend_only.py
     envVars:
       - key: GROQ_API_KEY
