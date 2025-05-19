@@ -25,10 +25,16 @@ load_dotenv()
 api_key = os.getenv("GROQ_API_KEY")
 if api_key:
     os.environ["GROQ_API_KEY"] = api_key
-    print(f"GROQ API key loaded: {api_key[:5]}...")
+    logging.info(f"GROQ API key loaded: {api_key[:5]}...")
 else:
-    print("WARNING: GROQ_API_KEY not found in .env file")
-    # If deploying to Render, the API key should be set as an environment variable there
+    logging.warning("GROQ_API_KEY not found in .env file")
+    # Check if it's directly in environment (for Vercel/Render)
+    api_key = os.environ.get("GROQ_API_KEY")
+    if api_key:
+        logging.info(f"GROQ API key found in environment: {api_key[:5]}...")
+    else:
+        logging.error("CRITICAL: No GROQ_API_KEY found in environment variables")
+        # For Vercel, we'll continue and let the app fail gracefully with proper error messages
 
 # Import backend components
 from retriever.llm_manager import LLMManager
@@ -38,12 +44,28 @@ from retriever.chat_manager import ChatManager
 # Create app config
 class AppConfig:
     def __init__(self):
-        self.gen_llm = LLMManager()
-        self.doc_manager = DocumentManager()
-        self.chat_manager = ChatManager(documentManager=self.doc_manager, llmManager=self.gen_llm)
-        logging.info("Backend-only AppConfig initialized")
+        try:
+            self.gen_llm = LLMManager()
+            self.doc_manager = DocumentManager()
+            self.chat_manager = ChatManager(documentManager=self.doc_manager, llmManager=self.gen_llm)
+            self.initialized = True
+            logging.info("Backend-only AppConfig initialized successfully")
+        except Exception as e:
+            self.initialized = False
+            self.error = str(e)
+            logging.error(f"Failed to initialize AppConfig: {str(e)}")
+            # Set placeholder attributes to avoid attribute errors
+            self.gen_llm = None
+            self.doc_manager = None
+            self.chat_manager = None
 
-app_config = AppConfig()
+try:
+    app_config = AppConfig()
+    if not app_config.initialized:
+        logging.warning("AppConfig initialization failed, API will return error responses")
+except Exception as e:
+    logging.error(f"Critical error creating AppConfig: {str(e)}")
+    app_config = None
 
 # Create FastAPI app
 app = FastAPI(title="TalkToYourDocument API",
@@ -74,7 +96,13 @@ class APIResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "TalkToYourDocument API is running (backend-only version)"}
+    if app_config is None or not getattr(app_config, 'initialized', False):
+        return {
+            "message": "TalkToYourDocument API is running but initialization failed",
+            "status": "error",
+            "error": getattr(app_config, 'error', "Unknown initialization error") if app_config else "AppConfig is None"
+        }
+    return {"message": "TalkToYourDocument API is running (backend-only version)", "status": "ok"}
 
 @app.get("/documents")
 async def get_documents():
@@ -96,10 +124,10 @@ async def upload_document(file: UploadFile = File(...)):
     try:
         # Read file content directly into memory
         file_content = await file.read()
-        
+
         # Process the document with cloud-optimized manager
         status, filename, doc_id = app_config.doc_manager.process_document(file_content, file.filename)
-        
+
         # Return response
         return JSONResponse(content={
             "success": True,
@@ -119,24 +147,24 @@ async def query_document(request: QueryRequest):
     try:
         if not request.query:
             raise HTTPException(status_code=400, detail="Query is required")
-        
+
         if not request.document_ids:
             raise HTTPException(status_code=400, detail="At least one document ID is required")
-        
+
         # Generate chat response
         chat_history = []
         updated_history = app_config.chat_manager.generate_chat_response(
-            request.query, 
-            request.document_ids, 
+            request.query,
+            request.document_ids,
             chat_history
         )
-        
+
         # Extract the bot's response
         if len(updated_history) >= 2:
             response = updated_history[-1]["content"]
         else:
             response = "No response generated"
-        
+
         return JSONResponse(content={
             "success": True,
             "message": "Query processed successfully",
@@ -155,16 +183,16 @@ async def get_summary(request: SummaryRequest):
     try:
         if not request.document_id:
             raise HTTPException(status_code=400, detail="Document ID is required")
-        
+
         # Get document chunks
         chunks = app_config.doc_manager.get_chunks(request.document_id)
-        
+
         if not chunks:
             raise HTTPException(status_code=404, detail="Document not found or no chunks available")
-        
+
         # Generate summary
         summary = app_config.chat_manager.generate_summary(chunks)
-        
+
         return JSONResponse(content={
             "success": True,
             "message": "Summary generated successfully",
