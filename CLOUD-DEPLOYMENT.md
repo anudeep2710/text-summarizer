@@ -38,6 +38,19 @@ Note that this is a backend-only application, so you'll need to create your own 
 
 ## Deployment on Vercel
 
+### Method 1: Using Vercel Dashboard (Recommended)
+
+1. Push your code to GitHub/GitLab/Bitbucket
+2. Log in to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "New Project" and import your repository
+4. Vercel will automatically detect the Python project with the `vercel.json` configuration
+5. Add the environment variable:
+   - **Key**: `GROQ_API_KEY`
+   - **Value**: Your Groq API key
+6. Click "Deploy"
+
+### Method 2: Using Vercel CLI
+
 1. Install the Vercel CLI:
    ```bash
    npm install -g vercel
@@ -53,9 +66,36 @@ Note that this is a backend-only application, so you'll need to create your own 
    vercel
    ```
 
-4. Add the environment variable in the Vercel dashboard:
+4. Add the environment variable when prompted or in the Vercel dashboard:
    - **Key**: `GROQ_API_KEY`
    - **Value**: Your Groq API key
+
+### Vercel Serverless Function Structure
+
+The application is structured to work with Vercel's serverless functions:
+
+- `/api/index.py`: Basic HTTP handler for Vercel
+- `/api/fastapi_handler.py`: FastAPI-based handler for Vercel
+- `/api/requirements.txt`: Minimal dependencies for the serverless functions
+
+You can access the API at:
+- Root endpoint: `https://your-vercel-app.vercel.app/`
+- Basic handler: `https://your-vercel-app.vercel.app/api/basic/`
+- FastAPI handler: `https://your-vercel-app.vercel.app/api/fastapi/`
+
+### Troubleshooting Vercel Deployment
+
+If you encounter issues with the deployment:
+
+1. **Check Logs**
+   - Go to your project in Vercel dashboard
+   - Click on the latest deployment
+   - Check "Functions" tab and click on the function to see logs
+
+2. **Common Issues**
+   - **Module not found errors**: Make sure all dependencies are in `api/requirements.txt`
+   - **Function timeout**: Vercel has a 10-second timeout for serverless functions
+   - **Memory limits**: Vercel has a 1GB memory limit for serverless functions
 
 ## API Usage
 

@@ -2,18 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "vercel_app.py",
-      "use": "@vercel/python",
-      "config": {
-        "runtime": "python3.9",
-        "installCommand": "pip install -r requirements.txt"
-      }
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "api/fastapi_handler.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
+      "src": "/api/basic/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/api/fastapi/(.*)",
+      "dest": "api/fastapi_handler.py"
+    },
+    {
       "src": "/(.*)",
-      "dest": "vercel_app.py"
+      "dest": "api/index.py"
     }
   ],
   "env": {

@@ -135,14 +135,23 @@ This backend-only application can also be deployed on Vercel's free tier:
 
 1. Push the code to your GitHub repository
 2. Connect your repository to Vercel
-3. Set the following configuration:
-   - Framework Preset: Other
-   - Build Command: `pip install -r requirements-slim.txt`
-   - Output Directory: `.`
-   - Install Command: `pip install -r requirements-slim.txt`
+3. Vercel will automatically detect the Python project with the `vercel.json` configuration
 4. Add the environment variable:
    - Key: `GROQ_API_KEY`
    - Value: Your Groq API key
+
+### Vercel Serverless Function Structure
+
+The application is structured to work with Vercel's serverless functions:
+
+- `/api/index.py`: Basic HTTP handler for Vercel
+- `/api/fastapi_handler.py`: FastAPI-based handler for Vercel
+- `/api/requirements.txt`: Minimal dependencies for the serverless functions
+
+You can access the API at:
+- Root endpoint: `https://your-vercel-app.vercel.app/`
+- Basic handler: `https://your-vercel-app.vercel.app/api/basic/`
+- FastAPI handler: `https://your-vercel-app.vercel.app/api/fastapi/`
 
 For more detailed deployment instructions, see [CLOUD-DEPLOYMENT.md](CLOUD-DEPLOYMENT.md)
 
