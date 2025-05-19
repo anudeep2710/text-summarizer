@@ -1,11 +1,12 @@
 """
-TalkToYourDocument: Vercel-specific entry point
+TalkToYourDocument: Standalone Vercel-compatible API
 """
 import os
 import sys
 import json
+from typing import List, Optional, Dict, Any
 
-# Simple logging to stdout since we can't rely on logging module
+# Simple logging to stdout
 def log(message):
     print(message, flush=True)
 
@@ -13,48 +14,70 @@ log(f"Python version: {sys.version}")
 log(f"Current directory: {os.getcwd()}")
 log(f"Directory contents: {os.listdir('.')}")
 
-# Check if requirements.txt exists
-if os.path.exists("requirements.txt"):
-    log("requirements.txt exists")
-    with open("requirements.txt", "r") as f:
-        log(f"requirements.txt content: {f.read()}")
-else:
-    log("WARNING: requirements.txt not found!")
-
 # Check if GROQ_API_KEY is set
 if "GROQ_API_KEY" in os.environ:
     log("GROQ_API_KEY is set")
 else:
     log("WARNING: GROQ_API_KEY is not set!")
 
-# Try to import FastAPI first to check if dependencies are installed
+# Create a minimal FastAPI app that doesn't depend on other modules
 try:
-    from fastapi import FastAPI
-    log("FastAPI imported successfully")
+    from fastapi import FastAPI, HTTPException
+    from fastapi.middleware.cors import CORSMiddleware
+    from pydantic import BaseModel
+    from fastapi.responses import JSONResponse
 
-    # Now try to import the app
-    try:
-        from app_backend_only import app
-        log("Successfully imported app from app_backend_only")
-    except Exception as e:
-        log(f"Error importing app_backend_only: {str(e)}")
-        # Create a minimal app for debugging
-        app = FastAPI()
+    log("Successfully imported FastAPI and related modules")
 
-        @app.get("/")
-        async def debug_info():
-            return {
-                "status": "error",
-                "message": f"Error importing app_backend_only: {str(e)}",
+    # Create a minimal FastAPI app
+    app = FastAPI(title="TalkToYourDocument API",
+                  description="Minimal API for document QA using LLMs",
+                  version="1.0.0")
+
+    # Enable CORS
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Define API models
+    class APIResponse(BaseModel):
+        success: bool
+        message: str
+        data: Optional[Dict[str, Any]] = None
+
+    @app.get("/")
+    async def root():
+        return {
+            "message": "TalkToYourDocument API is running (Vercel minimal version)",
+            "status": "ok",
+            "environment": {
                 "python_version": sys.version,
-                "environment_vars": list(os.environ.keys()),
-                "directory_contents": os.listdir('.')
+                "groq_api_key_set": "GROQ_API_KEY" in os.environ
             }
+        }
 
-except ImportError:
-    # FastAPI not installed, create a minimal WSGI app
-    log("ERROR: FastAPI not installed!")
+    @app.get("/documents")
+    async def get_documents():
+        """Get list of available documents (placeholder)"""
+        return JSONResponse(content={
+            "success": True,
+            "message": "This is a placeholder endpoint. The full functionality requires additional setup.",
+            "data": {"documents": []}
+        })
 
+    @app.get("/health")
+    async def health_check():
+        """Health check endpoint"""
+        return {"status": "healthy", "version": "1.0.0"}
+
+except ImportError as e:
+    log(f"ERROR: Could not import FastAPI: {str(e)}")
+
+    # Create a minimal WSGI app as fallback
     def app(environ, start_response):
         status = '200 OK'
         response_headers = [('Content-type', 'application/json')]
@@ -62,7 +85,7 @@ except ImportError:
 
         response_body = json.dumps({
             "status": "error",
-            "message": "FastAPI not installed. Check Vercel build logs.",
+            "message": f"Could not import FastAPI: {str(e)}",
             "python_version": sys.version,
             "environment_vars": list(os.environ.keys()),
             "directory_contents": os.listdir('.')
