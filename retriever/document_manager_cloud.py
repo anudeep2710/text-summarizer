@@ -1,63 +1,77 @@
 import logging
 import os
+import tempfile
 from typing import Any, Dict, List
 import uuid
-from data.document_loader import DocumentLoader
+import hashlib
 from data.pdf_reader import PDFReader
 from retriever.chunk_documents import chunk_documents
-from retriever.vector_store_manager import VectorStoreManager
+from retriever.vector_store_manager_cloud import VectorStoreManager
 
 class DocumentManager:
     def __init__(self):
-        self.doc_loader = DocumentLoader()
         self.pdf_reader = PDFReader()
         self.vector_manager = VectorStoreManager()
-        self.uploaded_documents = {}
-        self.chunked_documents = {}
-        self.document_ids = {}
-        logging.info("DocumentManager initialized")
+        self.uploaded_documents = {}  # filename -> doc_id mapping
+        self.chunked_documents = {}   # filename -> chunks mapping
+        self.document_ids = {}        # filename -> doc_id mapping
+        logging.info("Cloud-optimized DocumentManager initialized")
 
-    def process_document(self, file):
+    def process_document(self, file_content, filename):
         """
-        Process an uploaded file: load, read PDF, chunk, and store in vector store.
-        Returns: (status_message, page_list, filename, doc_id)
+        Process an uploaded file from memory: read PDF, chunk, and store in vector store.
+        
+        Args:
+            file_content (bytes): The binary content of the uploaded file
+            filename (str): The name of the file
+            
+        Returns: 
+            (status_message, filename, doc_id)
         """
         try:
-            if file is None:
-                return "No file uploaded", None, None
+            if not file_content:
+                return "No file content provided", None, None
 
-            logging.info(f"Processing file: {file}")
+            logging.info(f"Processing file: {filename}")
 
-            # Load and validate file
-            file_path = self.doc_loader.load_file(file)
-            filename = os.path.basename(file_path)
+            # Save to temporary file for PDF processing
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+                temp_file.write(file_content)
+                temp_path = temp_file.name
 
-            # Read PDF content
-            page_list = self.pdf_reader.read_pdf(file_path)
+            try:
+                # Read PDF content
+                page_list = self.pdf_reader.read_pdf(temp_path)
 
-            # Store the uploaded document
-            self.uploaded_documents[filename] = file_path
+                # Generate a unique document ID
+                doc_id = str(uuid.uuid4())
+                
+                # Store mappings
+                self.uploaded_documents[filename] = True
+                self.document_ids[filename] = doc_id
 
-            # Generate a unique document ID
-            doc_id = str(uuid.uuid4())
-            self.document_ids[filename] = doc_id
+                # Chunk the pages
+                chunks = chunk_documents(page_list, doc_id, chunk_size=2000, chunk_overlap=300)
+                self.chunked_documents[filename] = chunks
 
-            # Chunk the pages
-            chunks = chunk_documents(page_list, doc_id, chunk_size=2000, chunk_overlap=300)
-            self.chunked_documents[filename] = chunks
+                # Add chunks to vector store
+                self.vector_manager.add_documents(chunks)
 
-            # Add chunks to vector store
-            self.vector_manager.add_documents(chunks)
-
-            return (
-                f"Successfully loaded {filename} with {len(page_list)} pages",
-                filename,
-                doc_id
-            )
+                return (
+                    f"Successfully loaded {filename} with {len(page_list)} pages",
+                    filename,
+                    doc_id
+                )
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_path)
+                except:
+                    pass
 
         except Exception as e:
             logging.error(f"Error processing document: {str(e)}")
-            return f"Error: {str(e)}", [], None, None
+            return f"Error: {str(e)}", None, None
 
     def get_uploaded_documents(self):
         """Return the list of uploaded document filenames."""
@@ -103,16 +117,15 @@ class DocumentManager:
         top_k_results = all_results[:k]
 
         # Log the list of retrieved documents
-        #logging.info(f"Result from search :{all_results} ")
         logging.info(f"Retrieved top {k} documents:")
         for i, result in enumerate(top_k_results, 1):
             doc_id = result['metadata'].get('doc_id', 'Unknown')
             filename = next((name for name, d_id in self.document_ids.items() if d_id == doc_id), 'Unknown')
-            logging.info(f"{i}. Filename: {filename}, Doc ID: {doc_id}, Score: {result['score']:.4f}, Text: {result['text'][:200]}...")
+            logging.info(f"{i}. Filename: {filename}, Doc ID: {doc_id}, Score: {result['score']:.4f}, Text: {result['text'][:100]}...")
 
         return top_k_results
     
-    def retrieve_summary_chunks(self, query: str, doc_id : str, k: int = 10):
+    def retrieve_summary_chunks(self, query: str, doc_id: str, k: int = 10):
         logging.info(f"Retrieving {k} chunks for summary: {query}, Document Id: {doc_id}")
         results = self.vector_manager.search(query, doc_id, k=k)
         top_k_results = results[:k]

@@ -1,27 +1,26 @@
 ---
-title: TalkToYourDocument
+title: TalkToYourDocument (Backend-Only)
 emoji: 📉
 colorFrom: gray
 colorTo: indigo
-sdk: gradio
-sdk_version: 5.23.3
-app_file: app.py
+sdk: fastapi
+sdk_version: 0.115.0
+app_file: app_backend_only.py
 pinned: false
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+# TalkToYourDocument (Backend-Only)
 
-# TalkToYourDocument
-
-An AI-powered document question answering system that allows you to upload PDF documents and have conversations with them.
+A backend-only API for document question answering, optimized for deployment on free tiers of Render or Vercel.
 
 ## Features
 
 - Upload and process PDF documents
-- Get document summaries automatically 
-- Generate sample questions from documents
+- Get document summaries automatically
 - Ask custom questions about document content
 - Powerful LLM-based responses using Groq API
+- Backend-only for minimal storage usage
+- No frontend dependencies
 
 ## API Endpoints
 
@@ -32,7 +31,6 @@ An AI-powered document question answering system that allows you to upload PDF d
 | POST | `/upload` | Uploads and processes a new document | `file`: PDF document (form data) |
 | POST | `/query` | Queries documents with a question | JSON body: `query` (string), `document_ids` (array) |
 | POST | `/summary` | Generates a summary of a document | JSON body: `document_id` (string) |
-| POST | `/sample_questions` | Generates sample questions for a document | JSON body: `document_id` (string) |
 
 ## Request & Response Examples
 
@@ -104,7 +102,7 @@ An AI-powered document question answering system that allows you to upload PDF d
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements-slim.txt
    ```
 
 3. Set up your Groq API key:
@@ -113,32 +111,44 @@ An AI-powered document question answering system that allows you to upload PDF d
 
 ### Running the Application
 
-#### Web UI
-
-Run the application with the Gradio web interface:
+Run the backend-only API server:
 ```bash
-python app_dotenv.py
-```
-
-#### API Server
-
-Run just the API server for usage with mobile apps:
-```bash
-python app_api.py
+python app_backend_only.py
 ```
 
 ## Deployment on Render
 
-This application is configured for deployment on Render:
+This backend-only application is optimized for deployment on Render's free tier:
 
 1. Push the code to your GitHub repository
 2. Create a new Web Service on Render pointing to the repository
 3. Use the following settings:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `python app_api.py`
+   - Build Command: `pip install -r requirements-slim.txt`
+   - Start Command: `python app_backend_only.py`
 4. Add the environment variable:
    - Key: `GROQ_API_KEY`
    - Value: Your Groq API key
+
+## Deployment on Vercel
+
+This backend-only application can also be deployed on Vercel's free tier:
+
+1. Push the code to your GitHub repository
+2. Connect your repository to Vercel
+3. Set the following configuration:
+   - Framework Preset: Other
+   - Build Command: `pip install -r requirements-slim.txt`
+   - Output Directory: `.`
+   - Install Command: `pip install -r requirements-slim.txt`
+4. Add the environment variable:
+   - Key: `GROQ_API_KEY`
+   - Value: Your Groq API key
+
+For more detailed deployment instructions, see [CLOUD-DEPLOYMENT.md](CLOUD-DEPLOYMENT.md)
+
+## Connecting to the Backend
+
+Since this is a backend-only application, you'll need to create your own frontend or use API tools like Postman to interact with it. The API endpoints are documented above.
 
 ## Mobile App Integration
 

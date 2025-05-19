@@ -1,6 +1,6 @@
 import logging
 from retriever.llm_manager import LLMManager
-from retriever.document_manager import DocumentManager
+from retriever.document_manager_cloud import DocumentManager
 from retriever.chat_manager import ChatManager
 
 class AppConfig:
@@ -10,4 +10,4 @@ class AppConfig:
         # Initialize DocumentManager (it will be a singleton instance shared across the app)
         self.doc_manager = DocumentManager()
         self.chat_manager = ChatManager(documentManager = self.doc_manager, llmManager = self.gen_llm)
-        logging.info("AppConfig initialized with LLMManager")
+        logging.info("Backend-only AppConfig initialized with LLMManager")

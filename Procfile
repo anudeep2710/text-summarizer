@@ -1,1 +1,1 @@
-web: python app_api.py 
+web: python app_backend_only.py

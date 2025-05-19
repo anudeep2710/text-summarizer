@@ -1,20 +1,22 @@
 """
-TalkToYourDocument: API version for mobile app integration
-This version exposes REST API endpoints for Flutter apps to call
+TalkToYourDocument: Backend-only API version
+This version is optimized for deployment on free tiers of Render or Vercel
+with all frontend components removed
 """
 
 import os
 import sys
 import logging
 import tempfile
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from dotenv import load_dotenv
+from fastapi.responses import JSONResponse
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
+logging.basicConfig(level=logging.INFO,
                    format='%(asctime)s - %(levelname)s - %(message)s',
                    handlers=[logging.StreamHandler(sys.stdout)])
 
@@ -28,16 +30,27 @@ else:
     print("WARNING: GROQ_API_KEY not found in .env file")
     # If deploying to Render, the API key should be set as an environment variable there
 
-# Import app components after setting environment variables
-from globals import app_config
-from fastapi.responses import JSONResponse
+# Import backend components
+from retriever.llm_manager import LLMManager
+from retriever.document_manager_cloud import DocumentManager
+from retriever.chat_manager import ChatManager
+
+# Create app config
+class AppConfig:
+    def __init__(self):
+        self.gen_llm = LLMManager()
+        self.doc_manager = DocumentManager()
+        self.chat_manager = ChatManager(documentManager=self.doc_manager, llmManager=self.gen_llm)
+        logging.info("Backend-only AppConfig initialized")
+
+app_config = AppConfig()
 
 # Create FastAPI app
-app = FastAPI(title="TalkToYourDocument API", 
-              description="API for document QA using LLMs",
+app = FastAPI(title="TalkToYourDocument API",
+              description="Backend-only API for document QA using LLMs",
               version="1.0.0")
 
-# Enable CORS for Flutter app
+# Enable CORS for client apps
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -61,7 +74,7 @@ class APIResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "TalkToYourDocument API is running"}
+    return {"message": "TalkToYourDocument API is running (backend-only version)"}
 
 @app.get("/documents")
 async def get_documents():
@@ -81,13 +94,11 @@ async def get_documents():
 async def upload_document(file: UploadFile = File(...)):
     """Upload and process a document"""
     try:
-        # Save the uploaded file to a temporary location
-        temp_file_path = os.path.join(tempfile.gettempdir(), file.filename)
-        with open(temp_file_path, "wb") as buffer:
-            buffer.write(await file.read())
+        # Read file content directly into memory
+        file_content = await file.read()
         
-        # Process the document
-        status, filename, doc_id = app_config.doc_manager.process_document(temp_file_path)
+        # Process the document with cloud-optimized manager
+        status, filename, doc_id = app_config.doc_manager.process_document(file_content, file.filename)
         
         # Return response
         return JSONResponse(content={
@@ -165,35 +176,8 @@ async def get_summary(request: SummaryRequest):
         logging.error(f"Error generating summary: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
 
-@app.post("/sample_questions")
-async def get_sample_questions(request: SummaryRequest):
-    """Get sample questions for a document"""
-    try:
-        if not request.document_id:
-            raise HTTPException(status_code=400, detail="Document ID is required")
-        
-        # Get document chunks
-        chunks = app_config.doc_manager.get_chunks(request.document_id)
-        
-        if not chunks:
-            raise HTTPException(status_code=404, detail="Document not found or no chunks available")
-        
-        # Generate questions
-        questions = app_config.chat_manager.generate_sample_questions(chunks)
-        
-        return JSONResponse(content={
-            "success": True,
-            "message": "Sample questions generated successfully",
-            "data": {
-                "questions": questions
-            }
-        })
-    except Exception as e:
-        logging.error(f"Error generating sample questions: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating sample questions: {str(e)}")
-
 if __name__ == "__main__":
     import uvicorn
     # Use PORT environment variable for Render compatibility
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app_api:app", host="0.0.0.0", port=port, reload=True) 
+    port = int(os.environ.get("PORT", 8001))
+    uvicorn.run("app_backend_only:app", host="0.0.0.0", port=port)
