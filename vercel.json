@@ -4,27 +4,12 @@
     {
       "src": "api/index.py",
       "use": "@vercel/python"
-    },
-    {
-      "src": "api/fastapi_handler.py",
-      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/basic/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/api/fastapi/(.*)",
-      "dest": "api/fastapi_handler.py"
-    },
-    {
       "src": "/(.*)",
       "dest": "api/index.py"
     }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.9"
-  }
+  ]
 }
