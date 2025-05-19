@@ -1,0 +1,11 @@
+{
+  "name": "text-summarizer-api",
+  "version": "1.0.0",
+  "description": "Backend API for text summarization",
+  "scripts": {
+    "build": "pip install -r requirements.txt"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
