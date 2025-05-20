@@ -1,17 +1,6 @@
----
-title: TalkToYourDocument (Backend-Only)
-emoji: 📉
-colorFrom: gray
-colorTo: indigo
-sdk: fastapi
-sdk_version: 0.115.0
-app_file: app_backend_only.py
-pinned: false
----
-
 # TalkToYourDocument (Backend-Only)
 
-A backend-only API for document question answering, optimized for deployment on free tiers of Render or Vercel.
+A backend-only API for document question answering, optimized for deployment on Google Cloud Platform.
 
 ## Features
 
@@ -116,22 +105,9 @@ Run the backend-only API server:
 python app_backend_only.py
 ```
 
-## Deployment on Render
-
-This backend-only application is optimized for deployment on Render's free tier:
-
-1. Push the code to your GitHub repository
-2. Create a new Web Service on Render pointing to the repository
-3. Use the following settings:
-   - Build Command: `pip install -r requirements-slim.txt`
-   - Start Command: `python app_backend_only.py`
-4. Add the environment variable:
-   - Key: `GROQ_API_KEY`
-   - Value: Your Groq API key
-
 ## Deployment on Google Cloud Platform
 
-This application can be deployed to Google Cloud Platform using Cloud Run:
+This application is optimized for deployment on Google Cloud Platform using Cloud Run:
 
 1. Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
 2. Build and deploy using Cloud Run:
@@ -148,32 +124,6 @@ This application can be deployed to Google Cloud Platform using Cloud Run:
    ```
 
 For more detailed GCP deployment instructions, see [CLOUD-DEPLOYMENT-GCP.md](CLOUD-DEPLOYMENT-GCP.md)
-
-## Deployment on Vercel
-
-This backend-only application can also be deployed on Vercel's free tier:
-
-1. Push the code to your GitHub repository
-2. Connect your repository to Vercel
-3. Vercel will automatically detect the Python project with the `vercel.json` configuration
-4. Add the environment variable:
-   - Key: `GROQ_API_KEY`
-   - Value: Your Groq API key
-
-### Vercel Serverless Function Structure
-
-The application is structured to work with Vercel's serverless functions:
-
-- `/api/index.py`: Basic HTTP handler for Vercel
-- `/api/fastapi_handler.py`: FastAPI-based handler for Vercel
-- `/api/requirements.txt`: Minimal dependencies for the serverless functions
-
-You can access the API at:
-- Root endpoint: `https://your-vercel-app.vercel.app/`
-- Basic handler: `https://your-vercel-app.vercel.app/api/basic/`
-- FastAPI handler: `https://your-vercel-app.vercel.app/api/fastapi/`
-
-For more detailed deployment instructions, see [CLOUD-DEPLOYMENT.md](CLOUD-DEPLOYMENT.md)
 
 ## Connecting to the Backend
 

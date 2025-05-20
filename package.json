@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Backend API for text summarization",
   "scripts": {
-    "build": "pip install -r requirements.txt && pip install -r api/requirements.txt"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "build": "pip install -r requirements.txt"
   }
 }

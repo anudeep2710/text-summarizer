@@ -1,6 +1,6 @@
 """
 TalkToYourDocument: Backend-only API version
-This version is optimized for deployment on free tiers of Render or Vercel
+This version is optimized for deployment on Google Cloud Platform
 with all frontend components removed
 """
 
@@ -28,13 +28,13 @@ if api_key:
     logging.info(f"GROQ API key loaded: {api_key[:5]}...")
 else:
     logging.warning("GROQ_API_KEY not found in .env file")
-    # Check if it's directly in environment (for Vercel/Render)
+    # Check if it's directly in environment (for GCP Cloud Run)
     api_key = os.environ.get("GROQ_API_KEY")
     if api_key:
         logging.info(f"GROQ API key found in environment: {api_key[:5]}...")
     else:
         logging.error("CRITICAL: No GROQ_API_KEY found in environment variables")
-        # For Vercel, we'll continue and let the app fail gracefully with proper error messages
+        # We'll continue and let the app fail gracefully with proper error messages
 
 # Import backend components
 from retriever.llm_manager import LLMManager
@@ -206,6 +206,6 @@ async def get_summary(request: SummaryRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    # Use PORT environment variable for Render compatibility
-    port = int(os.environ.get("PORT", 8001))
+    # Use PORT environment variable for GCP Cloud Run compatibility
+    port = int(os.environ.get("PORT", 8080))
     uvicorn.run("app_backend_only:app", host="0.0.0.0", port=port)
