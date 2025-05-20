@@ -10,6 +10,10 @@ A backend-only API for document question answering, optimized for deployment on 
 - Powerful LLM-based responses using Groq API
 - Backend-only for minimal storage usage
 - No frontend dependencies
+- **Multilingual support** for documents, queries, and responses
+  - Automatic language detection
+  - Cross-language document search
+  - Translation between languages
 
 ## API Endpoints
 
@@ -55,7 +59,9 @@ A backend-only API for document question answering, optimized for deployment on 
 ```json
 {
   "query": "What is the main topic of this document?",
-  "document_ids": ["document1.pdf"]
+  "document_ids": ["document1.pdf"],
+  "query_language": "en",
+  "target_language": "es"
 }
 ```
 
@@ -65,10 +71,10 @@ A backend-only API for document question answering, optimized for deployment on 
   "success": true,
   "message": "Query processed successfully",
   "data": {
-    "response": "The main topic of this document is...",
+    "response": "El tema principal de este documento es...",
     "chat_history": [
       {"role": "user", "content": "What is the main topic of this document?"},
-      {"role": "assistant", "content": "The main topic of this document is..."}
+      {"role": "assistant", "content": "El tema principal de este documento es...\n\n[Response translated from en to es]"}
     ]
   }
 }
@@ -128,6 +134,59 @@ For more detailed GCP deployment instructions, see [CLOUD-DEPLOYMENT-GCP.md](CLO
 ## Connecting to the Backend
 
 Since this is a backend-only application, you'll need to create your own frontend or use API tools like Postman to interact with it. The API endpoints are documented above.
+
+## Multilingual Support
+
+This API supports multilingual document processing, queries, and responses:
+
+### Supported Languages
+
+- English (en)
+- Spanish (es)
+- French (fr)
+- German (de)
+- Italian (it)
+- Portuguese (pt)
+- Dutch (nl)
+- Russian (ru)
+- Chinese (Simplified) (zh-cn)
+- Chinese (Traditional) (zh-tw)
+- Japanese (ja)
+- Korean (ko)
+- Arabic (ar)
+- Hindi (hi)
+- Bengali (bn)
+- Urdu (ur)
+- Telugu (te)
+- Tamil (ta)
+- Marathi (mr)
+- Gujarati (gu)
+
+### Language Parameters
+
+When making API requests, you can specify:
+
+- `query_language`: The language of your query (auto-detected if not specified)
+- `target_language`: The language you want the response in
+
+Example:
+```json
+{
+  "query": "¿Cuál es el tema principal?",
+  "document_ids": ["document1.pdf"],
+  "query_language": "es",
+  "target_language": "en"
+}
+```
+
+This will:
+1. Process the Spanish query
+2. Search for relevant content in the document
+3. Return the response in English
+
+### Cross-Language Search
+
+The system can search documents in one language using queries in another language, making your document collection accessible regardless of language barriers.
 
 ## Mobile App Integration
 

@@ -9,3 +9,7 @@ langchain-groq==0.1.1
 PyPDF2==3.0.1
 sentence-transformers==2.2.2
 faiss-cpu==1.7.4
+langdetect==1.0.9
+googletrans==4.0.0-rc1
+langchain-community==0.0.13
+transformers==4.35.2

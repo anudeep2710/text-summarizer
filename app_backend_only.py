@@ -85,9 +85,13 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     query: str
     document_ids: List[str]
+    query_language: Optional[str] = None
+    target_language: Optional[str] = None
 
 class SummaryRequest(BaseModel):
     document_id: str
+    query_language: Optional[str] = None
+    target_language: Optional[str] = None
 
 class APIResponse(BaseModel):
     success: bool
@@ -156,7 +160,9 @@ async def query_document(request: QueryRequest):
         updated_history = app_config.chat_manager.generate_chat_response(
             request.query,
             request.document_ids,
-            chat_history
+            chat_history,
+            query_language=request.query_language,
+            target_language=request.target_language
         )
 
         # Extract the bot's response
@@ -191,7 +197,11 @@ async def get_summary(request: SummaryRequest):
             raise HTTPException(status_code=404, detail="Document not found or no chunks available")
 
         # Generate summary
-        summary = app_config.chat_manager.generate_summary(chunks)
+        summary = app_config.chat_manager.generate_summary(
+            chunks,
+            query_language=request.query_language,
+            target_language=request.target_language
+        )
 
         return JSONResponse(content={
             "success": True,
