@@ -129,6 +129,26 @@ This backend-only application is optimized for deployment on Render's free tier:
    - Key: `GROQ_API_KEY`
    - Value: Your Groq API key
 
+## Deployment on Google Cloud Platform
+
+This application can be deployed to Google Cloud Platform using Cloud Run:
+
+1. Install the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+2. Build and deploy using Cloud Run:
+   ```bash
+   # Build and deploy in one step
+   gcloud builds submit --tag gcr.io/[PROJECT_ID]/text-summarizer
+
+   gcloud run deploy text-summarizer \
+     --image gcr.io/[PROJECT_ID]/text-summarizer \
+     --platform managed \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --set-env-vars="GROQ_API_KEY=your_groq_api_key"
+   ```
+
+For more detailed GCP deployment instructions, see [CLOUD-DEPLOYMENT-GCP.md](CLOUD-DEPLOYMENT-GCP.md)
+
 ## Deployment on Vercel
 
 This backend-only application can also be deployed on Vercel's free tier:
